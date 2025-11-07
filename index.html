@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Russo Training (Static UI)</title>
+  <meta name="description" content="Russo Training — simple UI for Oura + workouts">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="container">
+      <h1>🏃‍♂️ Russo Training</h1>
+      <div class="muted">Static UI · FastAPI · Oura</div>
+    </div>
+  </header>
+
+  <main class="container space">
+    <section class="card">
+      <div class="grid2">
+        <div>
+          <label>Backend Base URL</label>
+          <input id="baseUrl" value="https://acr1008.onrender.com">
+        </div>
+        <div>
+          <label>User ID</label>
+          <input id="userId" value="russo_training">
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnHealth" class="primary">Check Health</button>
+        <button id="btnOura">Send Oura Daily</button>
+        <button id="btnWorkout">Send Workout</button>
+        <button id="btnPlan">Generate Plan</button>
+      </div>
+    </section>
+
+    <section class="grid3">
+      <div class="card">
+        <div class="title">Service Status</div>
+        <div id="healthBox" class="muted">Click <b>Check Health</b>.</div>
+      </div>
+
+      <div class="card">
+        <div class="title">Oura Daily Payload</div>
+        <textarea id="ouraPayload" class="mono tall"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="title">Workout Payload</div>
+        <textarea id="workoutPayload" class="mono tall"></textarea>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row between">
+        <div class="title">Weekly Plan</div>
+        <div id="planMeta" class="muted mono"></div>
+      </div>
+      <div id="planBox" class="plan muted">No plan yet.</div>
+      <div id="coachNotes" class="notes"></div>
+    </section>
+
+    <section class="card">
+      <div class="title">Activity Log</div>
+      <pre id="log" class="log mono">(no activity yet)</pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
