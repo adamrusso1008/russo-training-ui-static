@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Russo Training (Static UI)</title>
-  <meta name="description" content="Russo Training — simple UI for Oura + workouts">
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Russo Training — simple UI for Oura + workouts" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="bar">
@@ -20,18 +20,20 @@
       <div class="grid2">
         <div>
           <label>Backend Base URL</label>
-          <input id="baseUrl" value="https://acr1008.onrender.com">
+          <!-- If your API ever sits behind a prefix, you can include it here -->
+          <input id="baseUrl" value="https://acr1008.onrender.com" />
         </div>
         <div>
           <label>User ID</label>
-          <input id="userId" value="russo_training">
+          <input id="userId" value="russo_training" />
         </div>
       </div>
-      <div class="row">
-        <button id="btnHealth" class="primary">Check Health</button>
-        <button id="btnOura">Send Oura Daily</button>
-        <button id="btnWorkout">Send Workout</button>
-        <button id="btnPlan">Generate Plan</button>
+      <div class="row" style="margin-top:8px">
+        <button id="btnHealth" class="primary">Check Health (GET /health)</button>
+        <button id="btnOura">Send Oura Daily (POST /v1/integrations/oura/webhook)</button>
+        <button id="btnOuraTest">Test Oura (GET /v1/integrations/oura/test)</button>
+        <button id="btnWorkout">Send Workout (POST /v1/users/{id}/workouts)</button>
+        <button id="btnPlan">Generate Plan (GET /v1/generate_weekly_plan)</button>
       </div>
     </section>
 
