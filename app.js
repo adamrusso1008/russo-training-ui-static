@@ -1,76 +1,61 @@
+# app.py (only the NEW/CHANGED parts)
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from plan import generate_weekly_plan
+import asyncio
 
-app = FastAPI(
-    title="RunStrengthPlanner API",
-    version="0.1.0"
-)
+from oura_client import daily_scheduler, refresh_today, get_latest
 
-# --- CORS Setup ---
-origins = [
-    "*",  # You can restrict this later to your frontend Render URL
-]
+app = FastAPI(title="RunStrengthPlanner API", version="0.1.0")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],  # optionally restrict to your static site URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+stop_event = asyncio.Event()
 
-# --- Health Check ---
+@app.on_event("startup")
+async def _startup():
+    asyncio.create_task(daily_scheduler(stop_event))
+
+@app.on_event("shutdown")
+async def _shutdown():
+    stop_event.set()
+
 @app.get("/health")
 def health():
     return {"status": "ok", "ts": datetime.utcnow().isoformat()}
 
+# --- Oura manual refresh (optional) ---
+@app.post("/v1/oura/refresh_daily")
+async def oura_refresh_daily():
+    data = await refresh_today()
+    return {"refreshed": True, "data": data}
 
-# --- Oura Integration Test ---
-@app.get("/v1/integrations/oura/test")
-def oura_test():
-    return {
-        "oura_status": "connected",
-        "timestamp": datetime.utcnow().isoformat(),
-        "sample_readiness": 76,
-        "sample_sleep_hours": 7.2,
-        "sample_rhr": 52,
-    }
-
-
-# --- Oura Webhook ---
-@app.post("/v1/integrations/oura/webhook")
-async def oura_webhook(request: Request):
-    data = await request.json()
-    print("Oura webhook received:", data)
-    return {"status": "received", "items": len(data) if isinstance(data, list) else 1}
-
-
-# --- Upload Workout ---
-@app.post("/v1/users/{user_id}/workouts")
-async def upload_workout(user_id: str, request: Request):
-    data = await request.json()
-    print(f"Workout uploaded for {user_id}:", data)
-    return {"user_id": user_id, "received": True, "workout": data}
-
-
-# --- Generate Weekly Plan ---
-@app.get("/v1/generate_weekly_plan")
-def generate_plan(user_id: str = "default"):
+# --- Dashboard endpoint ---
+@app.get("/v1/dashboard")
+def dashboard(user_id: str = "adamrusso1008"):
+    """Return latest Oura metrics + an on-demand weekly plan so UI can render cards."""
+    latest = get_latest() or {}
     user = {
         "id": user_id,
         "baseline_rhr": 60,
-        "zones": {"z1": "<114", "z2": "114-132", "z3": "133-151", "z4": "152-170", "z5": "171+"}
+        "zones": {"z1": "<114", "z2": "114-132", "z3": "133-151", "z4": "152-170", "z5": "171+"},
     }
-
-    # Mock data for testing
+    # light synthetic inputs; your uploaded workouts will be used in prod
     workouts = [
         {"type": "run", "start_time": datetime.utcnow().isoformat(), "duration_min": 30, "time_in_zones": {"z2": 20}},
         {"type": "strength", "start_time": datetime.utcnow().isoformat(), "duration_min": 45},
     ]
-
-    oura_data = {"readiness_score": 77, "sleep_hours": 7.1, "rhr": 53}
-
-    plan = generate_weekly_plan(user, workouts, oura_data)
-    return plan
+    oura = {
+        "readiness_score": latest.get("readiness_score", 75),
+        "sleep_hours": latest.get("sleep_hours", 7.0),
+        "rhr": latest.get("rhr", 60),
+    }
+    plan = generate_weekly_plan(user, workouts, oura)
+    return {"latest_oura": latest, "plan": plan}
