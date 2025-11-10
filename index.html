@@ -1,118 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Russo Training Dashboard</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2rem; background:#f8f8f8; }
-    h1 { font-size: 1.6rem; margin-bottom: 1rem; }
-    label { display:block; margin-top: 1rem; font-weight:bold; }
-    input[type="text"] { width:100%; padding:0.5rem; border-radius:4px; border:1px solid #ccc; }
-    button { margin-top: 0.5rem; margin-right: 0.5rem; padding:0.6rem 1rem; border:0; border-radius:4px; background:#2563eb; color:#fff; cursor:pointer; }
-    button:hover { background:#1d4ed8; }
-    .results { margin-top: 1rem; padding:1rem; border:1px solid #ddd; border-radius:4px; background:#fff; min-height:120px; white-space:pre-wrap; }
-    textarea { width:100%; height:120px; border-radius:4px; border:1px solid #ccc; padding:0.5rem; font-family: monospace; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Russo Training — Dashboard</title>
+<style>
+  body{font-family:system-ui,Arial,sans-serif;background:#f5f7fb;margin:0}
+  header{background:#0f172a;color:#fff;padding:16px}
+  header .sub{opacity:.75;font-size:12px}
+  main{max-width:1100px;margin:0 auto;padding:16px}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;flex:1}
+  .kpi{display:flex;gap:12px}
+  .kpi .card{min-width:160px}
+  h1{font-size:18px;margin:0}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px}
+  .muted{color:#64748b;font-size:12px}
+  button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer}
+  button.secondary{background:#334155}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .day{border:1px solid #e5e7eb;border-radius:10px;padding:10px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  input{border:1px solid #e5e7eb;border-radius:8px;padding:8px;width:100%}
+  .controls{display:flex;gap:8px;align-items:center;margin:10px 0;flex-wrap:wrap}
+</style>
 </head>
 <body>
-  <h1>🏋️ Russo Training Dashboard</h1>
-
-  <label for="baseUrl">Backend Base URL</label>
-  <input type="text" id="baseUrl" value="https://acr1008.onrender.com">
-
-  <label for="userId">User ID</label>
-  <input type="text" id="userId" value="adamrusso1008">
-
-  <div style="margin-top:1rem;">
-    <button onclick="checkHealth()">Check Health</button>
-    <button onclick="testOura()">Test Oura</button>
-    <button onclick="sendOuraDaily()">Send Oura Daily</button>
-    <button onclick="sendWorkout()">Send Workout</button>
-    <button onclick="generatePlan()">Generate Plan</button>
+<header>
+  <h1>Russo Training — Dashboard</h1>
+  <div class="sub">Static UI · FastAPI · Oura (auto-refresh daily via backend)</div>
+</header>
+<main>
+  <div class="controls">
+    <label class="muted">Base URL</label>
+    <input id="baseUrl" value="https://acr1008.onrender.com" style="max-width:360px">
+    <label class="muted">User</label>
+    <input id="userId" value="adamrusso1008" style="max-width:200px">
+    <button id="btnReload">Reload Dashboard</button>
+    <button id="btnRefreshOura" class="secondary">Refresh Oura Now</button>
+    <span id="status" class="muted"></span>
   </div>
 
-  <div style="display:flex; margin-top:1rem; gap:1rem;">
-    <div style="flex:1;">
-      <h3>Oura Daily Payload</h3>
-      <textarea id="ouraPayload">{
-  "readiness_score": 76,
-  "sleep_hours": 7.3,
-  "rhr": 52,
-  "timestamp": "2025-11-09T07:00:00Z"
-}</textarea>
+  <div class="kpi row">
+    <div class="card"><div class="muted">Readiness</div><div id="kpi_ready" style="font-size:28px">–</div></div>
+    <div class="card"><div class="muted">Sleep (h)</div><div id="kpi_sleep" style="font-size:28px">–</div></div>
+    <div class="card"><div class="muted">Resting HR</div><div id="kpi_rhr" style="font-size:28px">–</div></div>
+    <div class="card"><div class="muted">HRV</div><div id="kpi_hrv" style="font-size:28px">–</div></div>
+    <div class="card"><div class="muted">ACWR</div><div id="kpi_acwr" style="font-size:28px">–</div></div>
+  </div>
 
-      <h3>Workout Payload</h3>
-      <textarea id="workoutPayload">{
-  "type": "run",
-  "duration_min": 35,
-  "start_time": "2025-11-09T14:00:00Z",
-  "time_in_zones": { "z2": 20, "z3": 10, "z4": 5 }
-}</textarea>
+  <div class="row" style="margin-top:10px">
+    <div class="card" style="flex:2">
+      <div class="muted">Weekly Plan</div>
+      <div id="planDates" class="pill mono"></div>
+      <div id="planGrid" class="grid" style="margin-top:8px"></div>
     </div>
-    <div style="flex:1;">
-      <h3>Service Output</h3>
-      <div id="output" class="results">Ready to go — click a button above.</div>
+    <div class="card" style="flex:1">
+      <div class="muted">Coach Notes</div>
+      <ul id="notes" style="margin-top:8px"></ul>
     </div>
   </div>
+</main>
 
 <script>
-function showResult(text) {
-  document.getElementById('output').textContent = text;
-}
+const $ = (s)=>document.querySelector(s);
+const set = (id,val)=>{ $(id).textContent = val??'–'; }
 
-async function getJSON(url) {
-  try {
-    const res = await fetch(url);
+async function loadDashboard(){
+  const base = $('#baseUrl').value.replace(/\/$/,'');
+  const user = $('#userId').value;
+  $('#status').textContent = 'Loading...';
+  try{
+    const res = await fetch(`${base}/v1/dashboard?user_id=${encodeURIComponent(user)}`);
     const data = await res.json();
-    showResult(JSON.stringify(data, null, 2));
-  } catch (err) {
-    showResult('❌ ' + err);
-  }
-}
 
-async function postJSON(url, payload) {
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload
+    // Oura KPIs
+    const o = data.latest_oura||{};
+    set('#kpi_ready', o.readiness_score ?? '–');
+    set('#kpi_sleep', o.sleep_hours?.toFixed ? o.sleep_hours.toFixed(1) : o.sleep_hours ?? '–');
+    set('#kpi_rhr', o.rhr ?? '–');
+    set('#kpi_hrv', o.hrv ?? '–');
+
+    // Plan KPIs & cards
+    const p = data.plan || {};
+    set('#kpi_acwr', p.acwr ?? '–');
+    $('#planDates').textContent = `${p.week_start ?? ''} → ${p.week_end ?? ''}`;
+    const grid = $('#planGrid');
+    grid.innerHTML = (p.plan||[]).map(d=>{
+      const details = Object.entries(d.details||{}).map(([k,v])=>`${k}: ${typeof v==='object'? JSON.stringify(v): v}`).join('\n');
+      return `<div class="day"><div class="muted mono">${d.day}</div><div style="font-weight:600">${d.session.replaceAll('_',' ')}</div><pre class="mono" style="white-space:pre-wrap;margin:6px 0 0">${details}</pre></div>`;
+    }).join('');
+
+    const notes = $('#notes'); notes.innerHTML = '';
+    (p.notes||[]).forEach(n=>{
+      const li=document.createElement('li'); li.textContent=n; notes.appendChild(li);
     });
-    const data = await res.json();
-    showResult(JSON.stringify(data, null, 2));
-  } catch (err) {
-    showResult('❌ ' + err);
+
+    $('#status').textContent = `Last Oura day: ${o.date ?? 'n/a'}`;
+  }catch(e){
+    $('#status').textContent = `Error: ${e}`;
   }
 }
 
-function checkHealth() {
-  const base = document.getElementById('baseUrl').value.trim();
-  getJSON(base + '/health');
+async function refreshOuraNow(){
+  const base = $('#baseUrl').value.replace(/\/$/,'');
+  $('#status').textContent = 'Refreshing Oura…';
+  try{
+    const res = await fetch(`${base}/v1/oura/refresh_daily`, {method:'POST'});
+    await res.json();
+  }catch(e){}
+  await loadDashboard();
 }
 
-function testOura() {
-  const base = document.getElementById('baseUrl').value.trim();
-  getJSON(base + '/v1/integrations/oura/test');
-}
+$('#btnReload').onclick = loadDashboard;
+$('#btnRefreshOura').onclick = refreshOuraNow;
 
-function sendOuraDaily() {
-  const base = document.getElementById('baseUrl').value.trim();
-  const payload = document.getElementById('ouraPayload').value.trim();
-  postJSON(base + '/v1/integrations/oura/webhook', payload);
-}
-
-function sendWorkout() {
-  const base = document.getElementById('baseUrl').value.trim();
-  const userId = document.getElementById('userId').value.trim();
-  const payload = document.getElementById('workoutPayload').value.trim();
-  postJSON(`${base}/v1/users/${userId}/workouts`, payload);
-}
-
-function generatePlan() {
-  const base = document.getElementById('baseUrl').value.trim();
-  const userId = document.getElementById('userId').value.trim();
-  getJSON(`${base}/v1/generate_weekly_plan?user_id=${encodeURIComponent(userId)}`);
-}
+// initial load
+loadDashboard();
 </script>
 </body>
 </html>
