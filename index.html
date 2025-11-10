@@ -3,66 +3,74 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Russo Training</title>
+  <title>Russo Training Dashboard</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 2rem; background:#f8f8f8; }
-    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    h1 { font-size: 1.6rem; margin-bottom: 1rem; }
     label { display:block; margin-top: 1rem; font-weight:bold; }
     input[type="text"] { width:100%; padding:0.5rem; border-radius:4px; border:1px solid #ccc; }
-    button { margin-top: 0.5rem; margin-right: 0.5rem; padding:0.5rem 1rem; border:0; border-radius:4px; background:#007ACC; color:#fff; cursor:pointer; }
-    button:hover { background:#005fa3; }
-    .results { margin-top: 1rem; padding:1rem; border:1px solid #ddd; border-radius:4px; background:#fff; min-height:100px; white-space:pre-wrap; }
-    textarea { width:100%; height:100px; border-radius:4px; border:1px solid #ccc; padding:0.5rem; }
+    button { margin-top: 0.5rem; margin-right: 0.5rem; padding:0.6rem 1rem; border:0; border-radius:4px; background:#2563eb; color:#fff; cursor:pointer; }
+    button:hover { background:#1d4ed8; }
+    .results { margin-top: 1rem; padding:1rem; border:1px solid #ddd; border-radius:4px; background:#fff; min-height:120px; white-space:pre-wrap; }
+    textarea { width:100%; height:120px; border-radius:4px; border:1px solid #ccc; padding:0.5rem; font-family: monospace; }
   </style>
 </head>
 <body>
-  <h1>Russo Training</h1>
+  <h1>🏋️ Russo Training Dashboard</h1>
+
   <label for="baseUrl">Backend Base URL</label>
-  <input type="text" id="baseUrl" placeholder="e.g. https://acr1008.onrender.com">
+  <input type="text" id="baseUrl" value="https://acr1008.onrender.com">
 
   <label for="userId">User ID</label>
-  <input type="text" id="userId" placeholder="e.g. russo_training">
+  <input type="text" id="userId" value="adamrusso1008">
 
   <div style="margin-top:1rem;">
-    <button onclick="checkHealth()">Check Health (GET /health)</button>
-    <button onclick="sendOuraDaily()">Send Oura Daily (POST /v1/integrations/oura/webhook)</button>
-    <button onclick="testOura()">Test Oura (GET /v1/integrations/oura/test)</button>
-    <button onclick="sendWorkout()">Send Workout (POST /v1/users/{id}/workouts)</button>
-    <button onclick="generatePlan()">Generate Plan (GET /v1/generate_weekly_plan)</button>
+    <button onclick="checkHealth()">Check Health</button>
+    <button onclick="testOura()">Test Oura</button>
+    <button onclick="sendOuraDaily()">Send Oura Daily</button>
+    <button onclick="sendWorkout()">Send Workout</button>
+    <button onclick="generatePlan()">Generate Plan</button>
   </div>
 
-  <div style="display:flex; margin-top:1rem;">
-    <div style="flex:1; padding-right:1rem;">
+  <div style="display:flex; margin-top:1rem; gap:1rem;">
+    <div style="flex:1;">
       <h3>Oura Daily Payload</h3>
-      <textarea id="ouraPayload" placeholder="Enter JSON for Oura webhook"></textarea>
+      <textarea id="ouraPayload">{
+  "readiness_score": 76,
+  "sleep_hours": 7.3,
+  "rhr": 52,
+  "timestamp": "2025-11-09T07:00:00Z"
+}</textarea>
 
       <h3>Workout Payload</h3>
-      <textarea id="workoutPayload" placeholder="Enter JSON for workout"></textarea>
+      <textarea id="workoutPayload">{
+  "type": "run",
+  "duration_min": 35,
+  "start_time": "2025-11-09T14:00:00Z",
+  "time_in_zones": { "z2": 20, "z3": 10, "z4": 5 }
+}</textarea>
     </div>
     <div style="flex:1;">
-      <h3>Service Status</h3>
-      <div id="output" class="results">Click a button to test an endpoint.</div>
+      <h3>Service Output</h3>
+      <div id="output" class="results">Ready to go — click a button above.</div>
     </div>
   </div>
 
 <script>
 function showResult(text) {
-  const out = document.getElementById('output');
-  out.textContent = text;
+  document.getElementById('output').textContent = text;
 }
 
-// Helper for GET requests
 async function getJSON(url) {
   try {
     const res = await fetch(url);
     const data = await res.json();
     showResult(JSON.stringify(data, null, 2));
   } catch (err) {
-    showResult('Error: ' + err);
+    showResult('❌ ' + err);
   }
 }
 
-// Helper for POST requests
 async function postJSON(url, payload) {
   try {
     const res = await fetch(url, {
@@ -73,44 +81,37 @@ async function postJSON(url, payload) {
     const data = await res.json();
     showResult(JSON.stringify(data, null, 2));
   } catch (err) {
-    showResult('Error: ' + err);
+    showResult('❌ ' + err);
   }
 }
 
 function checkHealth() {
-  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
-  if (!base) { showResult('Please enter a backend URL.'); return; }
+  const base = document.getElementById('baseUrl').value.trim();
   getJSON(base + '/health');
 }
 
-function sendOuraDaily() {
-  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
-  if (!base) { showResult('Please enter a backend URL.'); return; }
-  const payload = document.getElementById('ouraPayload').value.trim();
-  if (!payload) { showResult('Please enter Oura JSON payload.'); return; }
-  postJSON(base + '/v1/integrations/oura/webhook', payload);
-}
-
 function testOura() {
-  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
-  if (!base) { showResult('Please enter a backend URL.'); return; }
+  const base = document.getElementById('baseUrl').value.trim();
   getJSON(base + '/v1/integrations/oura/test');
 }
 
+function sendOuraDaily() {
+  const base = document.getElementById('baseUrl').value.trim();
+  const payload = document.getElementById('ouraPayload').value.trim();
+  postJSON(base + '/v1/integrations/oura/webhook', payload);
+}
+
 function sendWorkout() {
-  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+  const base = document.getElementById('baseUrl').value.trim();
   const userId = document.getElementById('userId').value.trim();
-  if (!base) { showResult('Please enter a backend URL.'); return; }
-  if (!userId) { showResult('Please enter user ID.'); return; }
   const payload = document.getElementById('workoutPayload').value.trim();
-  if (!payload) { showResult('Please enter workout JSON payload.'); return; }
   postJSON(`${base}/v1/users/${userId}/workouts`, payload);
 }
 
 function generatePlan() {
-  const base = document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
-  if (!base) { showResult('Please enter a backend URL.'); return; }
-  getJSON(base + '/v1/generate_weekly_plan');
+  const base = document.getElementById('baseUrl').value.trim();
+  const userId = document.getElementById('userId').value.trim();
+  getJSON(`${base}/v1/generate_weekly_plan?user_id=${encodeURIComponent(userId)}`);
 }
 </script>
 </body>
